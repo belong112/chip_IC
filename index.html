@@ -1,0 +1,419 @@
+import React, { useState, useEffect } from 'react';
+import { ChevronRight, ChevronLeft, RefreshCcw, Zap, Layers, Sun, Eraser, Activity, ArrowDown, Box, Disc } from 'lucide-react';
+
+// 定義製程步驟
+const PROCESS_STEPS = [
+  {
+    id: 'init',
+    title: '1. 初始矽晶圓 (Silicon Wafer)',
+    description: '這是半導體的基底，通常由高純度的矽(Si)製成。就像蓋房子需要地基，晶片也需要一個完美的基底。',
+    icon: <Layers size={24} />,
+    color: 'bg-gray-300',
+    instruction: '準備一片乾淨的矽晶圓。'
+  },
+  {
+    id: 'deposition',
+    title: '2. 薄膜沈積 (Deposition)',
+    description: '在晶圓表面生長一層二氧化矽(SiO2)或其他絕緣材料。這層薄膜將作為保護層或絕緣層。',
+    icon: <ArrowDown size={24} />,
+    color: 'bg-blue-200',
+    instruction: '沈積氧化層。'
+  },
+  {
+    id: 'coating',
+    title: '3. 塗佈光阻 (Photoresist Coating)',
+    description: '在薄膜上均勻塗上一層感光液體，稱為「光阻」。光阻對特定波長的光線敏感，是圖形轉移的關鍵。',
+    icon: <Layers size={24} className="text-purple-500" />,
+    color: 'bg-purple-400',
+    instruction: '旋轉塗佈光阻。'
+  },
+  {
+    id: 'lithography',
+    title: '4. 微影曝光 (Photolithography)',
+    description: '使用光罩(Mask)遮擋光線，用強紫外光照射。被光照到的光阻化學性質會改變（此處模擬正光阻，曝光部分變軟）。',
+    icon: <Sun size={24} className="text-yellow-500" />,
+    color: 'bg-yellow-200',
+    instruction: '通過光罩進行曝光。'
+  },
+  {
+    id: 'etching',
+    title: '5. 顯影與蝕刻 (Etching)',
+    description: '先洗掉被曝光的光阻（顯影），露出下方的氧化層。接著用化學藥劑或電漿「吃掉」露出的氧化層，將圖案轉移到氧化層上。',
+    icon: <Eraser size={24} />,
+    color: 'bg-red-200',
+    instruction: '移除曝光區域並蝕刻氧化層。'
+  },
+  {
+    id: 'stripping',
+    title: '6. 去除光阻 (Stripping)',
+    description: '蝕刻完成後，剩下的光阻已經完成了保護任務，需要被徹底清除，只留下有圖案的氧化層。',
+    icon: <RefreshCcw size={24} />,
+    color: 'bg-gray-200',
+    instruction: '清除剩餘的光阻劑。'
+  },
+  {
+    id: 'doping',
+    title: '7. 離子佈植 (Doping)',
+    description: '利用高能量將雜質離子（如硼或磷）打入矽晶圓裸露的區域，改變其導電性質，形成電晶體的「源極」或「汲極」。',
+    icon: <Zap size={24} className="text-green-600" />,
+    color: 'bg-green-200',
+    instruction: '注入離子改變導電性。'
+  },
+  {
+    id: 'metal_dep',
+    title: '8. 金屬沈積 (Metal Deposition)',
+    description: '沈積導電金屬（如鎢、銅或鋁），填滿蝕刻出的孔洞並覆蓋整個表面，建立與下方矽基板的電路連接。',
+    icon: <Box size={24} className="text-slate-600" />,
+    color: 'bg-slate-300',
+    instruction: '沈積金屬層以填補孔洞。'
+  },
+  {
+    id: 'cmp',
+    title: '9. 化學機械研磨 (CMP)',
+    description: '利用化學漿料與機械研磨墊，像磨砂紙一樣將表面多餘的金屬磨平，只保留孔洞中的金屬導線，確保表面極度平坦。',
+    icon: <Disc size={24} className="text-cyan-600" />,
+    color: 'bg-cyan-200',
+    instruction: '研磨表面移除多餘金屬。'
+  }
+];
+
+export default function SemiconductorFab() {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  
+  // 用於控制動畫狀態的內部變數
+  const [animState, setAnimState] = useState({
+    hasOxide: false,
+    hasResist: false,
+    isExposed: false,
+    isEtched: false,
+    resistRemoved: false,
+    isDoped: false,
+    hasMetal: false,
+    isPolished: false
+  });
+
+  // 當步驟改變時，重置動畫並根據步驟設定初始狀態
+  useEffect(() => {
+    // 根據當前步驟設定靜態狀態 (由後往前檢查)
+    const newAnimState = {
+      hasOxide: currentStep >= 1,
+      hasResist: currentStep >= 2 && currentStep < 5,
+      isExposed: currentStep >= 3 && currentStep < 5,
+      isEtched: currentStep >= 4,
+      resistRemoved: currentStep >= 5,
+      isDoped: currentStep >= 6,
+      hasMetal: currentStep >= 7,
+      isPolished: currentStep >= 8
+    };
+    setAnimState(newAnimState);
+    
+    // 簡單的動畫觸發模擬
+    setIsAnimating(true);
+    const timer = setTimeout(() => setIsAnimating(false), 1000);
+    return () => clearTimeout(timer);
+  }, [currentStep]);
+
+  const nextStep = () => {
+    if (currentStep < PROCESS_STEPS.length - 1) {
+      setCurrentStep(prev => prev + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(prev => prev - 1);
+    }
+  };
+
+  const reset = () => {
+    setCurrentStep(0);
+  };
+
+  // 視覺化組件 - 這是核心動畫區域
+  const WaferVisualizer = () => {
+    const stepId = PROCESS_STEPS[currentStep].id;
+
+    return (
+      <div className="relative w-full h-80 md:h-96 bg-slate-800 rounded-xl overflow-hidden shadow-inner border border-slate-600 flex items-end justify-center p-4 md:p-8">
+        
+        {/* 標籤與提示 */}
+        <div className="absolute top-4 left-4 text-slate-300 text-xs font-mono space-y-1 pointer-events-none select-none z-30">
+          <div className="flex items-center"><span className="w-3 h-3 bg-gray-500 mr-2 border border-gray-400"></span> 矽基板 (Si)</div>
+          <div className={`flex items-center transition-opacity duration-500 ${animState.hasOxide ? 'opacity-100' : 'opacity-30'}`}><span className="w-3 h-3 bg-blue-300 mr-2 border border-blue-200"></span> 氧化層 (SiO2)</div>
+          <div className={`flex items-center transition-opacity duration-500 ${(animState.hasResist && !animState.resistRemoved) ? 'opacity-100' : 'opacity-30'}`}><span className="w-3 h-3 bg-purple-400 mr-2 border border-purple-300"></span> 光阻 (PR)</div>
+          <div className={`flex items-center transition-opacity duration-500 ${animState.isDoped ? 'opacity-100' : 'opacity-30'}`}><span className="w-3 h-3 bg-green-500 mr-2 border border-green-400"></span> 摻雜區 (Doped)</div>
+          <div className={`flex items-center transition-opacity duration-500 ${animState.hasMetal ? 'opacity-100' : 'opacity-30'}`}><span className="w-3 h-3 bg-slate-200 mr-2 border border-slate-400"></span> 金屬 (Metal)</div>
+        </div>
+
+        {/* CMP 動畫 (僅在 CMP 階段顯示) */}
+        {stepId === 'cmp' && isAnimating && (
+           <div className="absolute top-20 w-32 h-12 bg-slate-700 rounded-lg border-2 border-slate-500 shadow-xl z-40 flex items-center justify-center" style={{ animation: 'moveLeftRight 1s infinite alternate' }}>
+              <div className="flex flex-col items-center">
+                <span className="text-cyan-300 text-[10px] font-bold tracking-wider">CMP HEAD</span>
+                <div className="w-24 h-1 bg-cyan-400 rounded-full mt-1 shadow-[0_0_5px_rgba(34,211,238,0.8)]"></div>
+              </div>
+           </div>
+        )}
+
+        {/* 光罩與光線動畫 (僅在曝光階段顯示) */}
+        {stepId === 'lithography' && (
+          <div className="absolute top-0 w-full h-full flex flex-col items-center z-20">
+            {/* Mask - 改為遮擋中間 */}
+            <div className="w-full flex justify-center mt-4 animate-fade-in-down">
+              <div className="h-2 w-1/3 bg-black shadow-lg rounded-sm border border-gray-800"></div>
+            </div>
+            {/* UV Light Beams - 改為照射兩側 */}
+            <div className="absolute top-0 w-3/4 h-full flex justify-between px-4 opacity-0 animate-flash pointer-events-none">
+               {/* 左側光束 */}
+               <div className="w-1/3 h-full bg-yellow-300 opacity-20 mix-blend-screen"></div>
+               {/* 右側光束 */}
+               <div className="w-1/3 h-full bg-yellow-300 opacity-20 mix-blend-screen"></div>
+            </div>
+            <div className="absolute top-10 text-yellow-300 font-bold animate-pulse">UV Light Exposure</div>
+          </div>
+        )}
+
+        {/* 離子束動畫 (僅在摻雜階段顯示) - 改為打在兩側 */}
+        {stepId === 'doping' && isAnimating && (
+          <div className="absolute inset-0 z-20 overflow-hidden pointer-events-none">
+            {[...Array(24)].map((_, i) => (
+              <div 
+                key={i}
+                className="absolute w-1 h-4 bg-green-400 rounded-full"
+                style={{
+                  /* 隨機分佈在左側 (15-35%) 或 右側 (65-85%) */
+                  left: `${Math.random() > 0.5 ? (15 + Math.random() * 20) : (65 + Math.random() * 20)}%`,
+                  top: `-${Math.random() * 20}%`,
+                  animation: `dopingRain 0.5s linear ${Math.random() * 0.5}s infinite`
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* 整個晶圓結構 Container */}
+        <div className="relative w-3/4 max-w-lg flex flex-col items-center transform transition-transform duration-500 hover:scale-105">
+          
+          {/* 4. 金屬層 (Metal Layer) - 上方覆蓋層 */}
+          {animState.hasMetal && (
+            <div className="absolute w-full bottom-[128px] flex flex-col justify-end z-20 pointer-events-none">
+              {/* 上層多餘金屬 (CMP時會消失) */}
+              <div className={`w-full bg-gradient-to-b from-slate-200 to-slate-300 border-x border-t border-slate-400 transition-all duration-1000 ease-in-out
+                 ${animState.isPolished ? 'h-0 opacity-0' : 'h-12 opacity-100'}`}>
+              </div>
+            </div>
+          )}
+
+          {/* 3. 光阻層 (Photoresist) */}
+          {animState.hasResist && !animState.resistRemoved && (
+            <div className="w-full flex h-8 transition-all duration-700 ease-out z-10 origin-bottom animate-slide-up">
+              {/* 左側光阻：被曝光 (變軟/變色) -> 被蝕刻 (消失) */}
+              <div className={`w-1/3 h-full border-t border-l border-purple-300 rounded-tl-sm transition-all duration-1000
+                 ${animState.isExposed && !animState.isEtched ? 'bg-purple-300 opacity-80' : ''}
+                 ${!animState.isExposed && !animState.isEtched ? 'bg-purple-400' : ''}
+                 ${animState.isEtched ? 'opacity-0 h-0' : ''}
+              `}>
+                {stepId === 'lithography' && isAnimating && (
+                  <div className="w-full h-full bg-yellow-200 opacity-50 animate-pulse rounded-tl-sm"></div>
+                )}
+              </div>
+
+              {/* 中間光阻：被光罩遮擋 (保持原樣) */}
+              <div className="w-1/3 h-full bg-purple-400 border-t border-purple-300 transition-all duration-1000 z-10"></div>
+
+              {/* 右側光阻：被曝光 (變軟/變色) -> 被蝕刻 (消失) */}
+              <div className={`w-1/3 h-full border-t border-r border-purple-300 rounded-tr-sm transition-all duration-1000
+                 ${animState.isExposed && !animState.isEtched ? 'bg-purple-300 opacity-80' : ''}
+                 ${!animState.isExposed && !animState.isEtched ? 'bg-purple-400' : ''}
+                 ${animState.isEtched ? 'opacity-0 h-0' : ''}
+              `}>
+                {stepId === 'lithography' && isAnimating && (
+                  <div className="w-full h-full bg-yellow-200 opacity-50 animate-pulse rounded-tr-sm"></div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 2. 氧化層 (Oxide Layer) + 金屬 Plug (填補孔洞) */}
+          <div className={`relative w-full flex transition-all duration-1000 ${animState.hasOxide ? 'h-8 opacity-100' : 'h-0 opacity-0'}`}>
+             
+             {/* 左側區域：氧化層被蝕刻 -> 金屬填補 */}
+             <div className="relative w-1/3 h-full z-10">
+               {/* 氧化層 */}
+               <div className={`absolute inset-0 bg-blue-300 border-t border-l border-blue-200 transition-all duration-1000 origin-top z-10 ${animState.isEtched ? 'scale-y-0 opacity-0' : 'scale-y-100'}`}></div>
+               {/* 金屬 */}
+               <div className={`absolute inset-0 bg-slate-300 border-l border-slate-400 transition-all duration-1000 z-0 ${animState.hasMetal ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 origin-bottom'}`}>
+                   <div className="w-full h-full bg-gradient-to-r from-transparent via-white to-transparent opacity-30"></div>
+               </div>
+             </div>
+             
+             {/* 中間區域：氧化層保留 (被上方光阻保護) */}
+             <div className="w-1/3 h-full bg-blue-300 border-t border-blue-200 z-10 relative">
+               {/* 可以加一點細節讓它看起來像 Gate Oxide */}
+             </div>
+
+             {/* 右側區域：氧化層被蝕刻 -> 金屬填補 */}
+             <div className="relative w-1/3 h-full z-10">
+               {/* 氧化層 */}
+               <div className={`absolute inset-0 bg-blue-300 border-t border-r border-blue-200 transition-all duration-1000 origin-top z-10 ${animState.isEtched ? 'scale-y-0 opacity-0' : 'scale-y-100'}`}></div>
+               {/* 金屬 */}
+               <div className={`absolute inset-0 bg-slate-300 border-r border-slate-400 transition-all duration-1000 z-0 ${animState.hasMetal ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 origin-bottom'}`}>
+                   <div className="w-full h-full bg-gradient-to-r from-transparent via-white to-transparent opacity-30"></div>
+               </div>
+             </div>
+          </div>
+
+          {/* 1. 矽基板 (Silicon Substrate) */}
+          <div className="w-full h-24 bg-gray-500 border border-gray-400 rounded-b-lg relative overflow-hidden shadow-2xl z-10">
+             <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-white to-transparent"></div>
+             
+             {/* 左側摻雜區域 (Source) */}
+             <div className={`absolute top-0 left-0 w-1/3 h-12 rounded-br-xl bg-green-500 transition-all duration-1000 blur-sm
+               ${animState.isDoped ? 'opacity-60 translate-y-0' : 'opacity-0 -translate-y-4'}
+             `}></div>
+
+             {/* 右側摻雜區域 (Drain) */}
+             <div className={`absolute top-0 right-0 w-1/3 h-12 rounded-bl-xl bg-green-500 transition-all duration-1000 blur-sm
+               ${animState.isDoped ? 'opacity-60 translate-y-0' : 'opacity-0 -translate-y-4'}
+             `}></div>
+             
+             <div className="absolute bottom-2 right-4 text-gray-300 font-bold text-xl opacity-20">Si</div>
+          </div>
+
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 p-4 md:p-8">
+      <style>{`
+        @keyframes dopingRain {
+          0% { transform: translateY(0); opacity: 1; }
+          100% { transform: translateY(300px); opacity: 0; }
+        }
+        @keyframes flash {
+          0%, 100% { opacity: 0; }
+          50% { opacity: 1; }
+        }
+        @keyframes moveLeftRight {
+          from { transform: translateX(-20px); }
+          to { transform: translateX(20px); }
+        }
+      `}</style>
+
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <header className="mb-8 text-center">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2 flex justify-center items-center gap-3">
+            <Activity className="text-blue-600" />
+            晶圓製程實驗室
+          </h1>
+          <p className="text-slate-500">互動式半導體製程模擬器</p>
+        </header>
+
+        {/* Main Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Left: Visualizer (跨兩欄) */}
+          <div className="lg:col-span-2 space-y-6">
+            <WaferVisualizer />
+
+            {/* Control Panel */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+              
+              <button 
+                onClick={prevStep} 
+                disabled={currentStep === 0}
+                className={`flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${currentStep === 0 ? 'text-slate-300 cursor-not-allowed' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              >
+                <ChevronLeft size={20} className="mr-1" /> 上一步
+              </button>
+
+              <div className="flex flex-col items-center">
+                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Current Step</span>
+                 <span className="text-lg font-bold text-blue-600">{currentStep + 1} / {PROCESS_STEPS.length}</span>
+              </div>
+
+              <div className="flex gap-2">
+                <button 
+                  onClick={reset}
+                  className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+                  title="重新開始"
+                >
+                  <RefreshCcw size={20} />
+                </button>
+                <button 
+                  onClick={nextStep} 
+                  disabled={currentStep === PROCESS_STEPS.length - 1}
+                  className={`flex items-center px-6 py-2 rounded-lg font-bold shadow-md transition-transform active:scale-95 ${currentStep === PROCESS_STEPS.length - 1 ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                >
+                  {currentStep === PROCESS_STEPS.length - 1 ? '完成' : '下一步'} <ChevronRight size={20} className="ml-1" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Info Panel */}
+          <div className="lg:col-span-1">
+            <div className="bg-white h-full p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+              
+              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-slate-100">
+                <div className={`p-3 rounded-full ${PROCESS_STEPS[currentStep].color}`}>
+                  {PROCESS_STEPS[currentStep].icon}
+                </div>
+                <h2 className="text-xl font-bold">{PROCESS_STEPS[currentStep].title}</h2>
+              </div>
+
+              <div className="flex-grow space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-400 uppercase mb-1">製程說明</h3>
+                  <p className="text-slate-700 leading-relaxed">
+                    {PROCESS_STEPS[currentStep].description}
+                  </p>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                  <h3 className="text-xs font-bold text-blue-500 uppercase mb-2">操作指令</h3>
+                  <p className="text-blue-800 font-medium text-sm flex items-start">
+                    <ChevronRight size={16} className="mt-0.5 mr-1 flex-shrink-0" />
+                    {PROCESS_STEPS[currentStep].instruction}
+                  </p>
+                </div>
+
+                <div className="pt-4">
+                    <h3 className="text-sm font-bold text-slate-400 uppercase mb-2">工業知識補充</h3>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                        {currentStep === 0 && "現在的晶圓尺寸主要為 12 吋 (300mm)，越大的晶圓可以切割出越多晶片，降低成本。"}
+                        {currentStep === 1 && "常見的沈積技術有 CVD (化學氣相沈積) 和 PVD (物理氣相沈積)。"}
+                        {currentStep === 2 && "光阻的均勻度至關重要，通常使用快速旋轉產生的離心力來塗佈。"}
+                        {currentStep === 3 && "這是最昂貴的步驟。EUV (極紫外光) 機台一台造價數億美金，是用來製造 7nm 以下先進製程的關鍵。"}
+                        {currentStep === 4 && "分為乾式蝕刻(電漿)與濕式蝕刻(化學液)。先進製程多使用各向異性的乾式蝕刻來確保線條垂直度。"}
+                        {currentStep === 5 && "清潔步驟若不徹底，殘留的粒子會導致後續製程失敗，影響良率。"}
+                        {currentStep === 6 && "透過控制摻雜的濃度和深度，我們可以精確控制電晶體的開關特性 (Threshold Voltage)。"}
+                        {currentStep === 7 && "鋁(Aluminum)曾經是主要導線材料，但為了追求更快的速度，現在先進製程多改用電阻更低的銅(Copper)。"}
+                        {currentStep === 8 && "CMP 技術的成熟是半導體進入多層導線時代的關鍵，它能解決堆疊多層後表面凹凸不平的問題。"}
+                    </p>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-6 pt-4 border-t border-slate-100">
+                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-blue-600 h-full transition-all duration-500"
+                    style={{ width: `${((currentStep + 1) / PROCESS_STEPS.length) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-center text-xs text-slate-400 mt-2">製程進度</p>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
